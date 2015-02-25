@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 public static class StringExtensions
 {
@@ -23,5 +24,10 @@ public static class StringExtensions
             }
         }
         return text;
+    }
+
+    public static string RemoveSign(this string text)
+    {
+        return Regex.Replace(text, @"\W+", "");
     }
 }

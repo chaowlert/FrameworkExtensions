@@ -6,7 +6,7 @@ using Common.Logging;
 
 namespace FrameworkExtensions
 {
-    public class FileWatcher
+    public class FileWatcher : IDisposable
     {
         private readonly ILog _logger;
         readonly string _path;
@@ -71,24 +71,28 @@ namespace FrameworkExtensions
         }
 
         readonly ConcurrentDictionary<string, object> _store = new ConcurrentDictionary<string, object>();
-        readonly ConcurrentDictionary<string, Func<Stream, object>> _creator = new ConcurrentDictionary<string, Func<Stream, object>>(); 
+        readonly ConcurrentDictionary<string, Func<Stream, object>> _func = new ConcurrentDictionary<string, Func<Stream, object>>(); 
         void File_Changed(object sender, FileSystemEventArgs e)
         {
             Func<Stream, object> func;
-            if (!_creator.TryGetValue(e.Name, out func))
+            if (!_func.TryGetValue(e.Name, out func))
                 return;
-            // ReSharper disable once CSharpWarnings::CS4014
             throttlingLoad(e, func);
         }
 
-        async void throttlingLoad(FileSystemEventArgs e, Func<Stream, object> func)
+        async void throttlingLoad(FileSystemEventArgs e, Func<Stream, object> creator)
         {
             if (!_bag.TryAdd(e.Name, true))
                 return;
             await Task.Delay(50);
-            var value = loadFile(e.Name, e.FullPath, func);
+            var value = loadFile(e.Name, e.FullPath, creator);
             if (value != null)
+            {
+                var old = _store[e.Name] as IDisposable;
                 _store[e.Name] = value;
+                if (old != null)
+                    old.Dispose();
+            }
             bool b;
             _bag.TryRemove(e.Name, out b);
         }
@@ -124,11 +128,21 @@ namespace FrameworkExtensions
 
         object createWatch(string name, Func<Stream, object> creator, object @default)
         {
-            _creator[name] = creator;
+            _func[name] = creator;
             var filePath = Path.Combine(_path, name);
             if (!File.Exists(filePath))
                 return @default;
             return loadFile(name, filePath, creator);
-        } 
+        }
+
+        public void Dispose()
+        {
+            foreach (var kvp in _store)
+            {
+                var d = kvp.Value as IDisposable;
+                if (d != null)
+                    d.Dispose();
+            }
+        }
     }
 }
