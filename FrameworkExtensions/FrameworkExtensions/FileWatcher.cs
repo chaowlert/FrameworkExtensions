@@ -8,22 +8,23 @@ namespace FrameworkExtensions
 {
     public class FileWatcher : IDisposable
     {
+        public string Path { get; private set; }
+
         private readonly ILog _logger;
-        readonly string _path;
         readonly FileSystemWatcher _watcher = new FileSystemWatcher();
         public FileWatcher(string name, string path)
         {
             _logger = LogManager.GetLogger(name);
-            _path = path;
+            Path = path;
             setupWatcher();
         }
 
         private void setupWatcher()
         {
-            var dir = new DirectoryInfo(_path);
+            var dir = new DirectoryInfo(Path);
             if (dir.Exists)
             {
-                _watcher.Path = _path;
+                _watcher.Path = Path;
                 _watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName;
                 _watcher.IncludeSubdirectories = true;
                 _watcher.Filter = "*.*";
@@ -31,11 +32,11 @@ namespace FrameworkExtensions
                 _watcher.Changed += File_Changed;
                 _watcher.Renamed += File_Changed;
                 _watcher.EnableRaisingEvents = true;
-                _logger.Info("Start watching " + _path);
+                _logger.Info("Start watching " + Path);
             }
             else
             {
-                _logger.Warn("Cannot find path " + _path);
+                _logger.Warn("Cannot find path " + Path);
                 _watcher.NotifyFilter = NotifyFilters.DirectoryName;
                 _watcher.Created += Dir_Change;
                 _watcher.Renamed += Dir_Change;
@@ -47,7 +48,7 @@ namespace FrameworkExtensions
         {
             if (dir == null)
             {
-                _logger.Fatal("Fail to watch " + _path);
+                _logger.Fatal("Fail to watch " + Path);
                 return;
             }
             if (dir.Exists)
@@ -98,6 +99,7 @@ namespace FrameworkExtensions
         }
 
         readonly ConcurrentDictionary<string, bool> _bag = new ConcurrentDictionary<string, bool>();
+
         object loadFile(string name, string path, Func<Stream, object> func)
         {
             try
@@ -129,7 +131,7 @@ namespace FrameworkExtensions
         object createWatch(string name, Func<Stream, object> creator, object @default)
         {
             _func[name] = creator;
-            var filePath = Path.Combine(_path, name);
+            var filePath = System.IO.Path.Combine(Path, name);
             if (!File.Exists(filePath))
                 return @default;
             return loadFile(name, filePath, creator);

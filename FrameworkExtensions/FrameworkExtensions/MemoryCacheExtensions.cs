@@ -20,27 +20,33 @@ namespace System.Runtime.Caching
     }
     public static class MemoryCacheExtensions
     {
-        public static T GetOrCreate<T>(this MemoryCache cache, string key, Func<T> func, int minExpire = 8) where T : class
+        public static T GetOrCreate<T>(this MemoryCache cache, string key, Func<T> func, int maxExpire = 16) where T : class
         {
-            var obj = (CacheObject<T>)cache.Get(key);
-            var now = DateTime.UtcNow;
+            var obj = (CacheObject<T>) cache.Get(key);
             if (obj == null)
             {
                 obj = new CacheObject<T>
                 {
-                    Item = func(),
-                    ExpiredTicks = now.AddMinutes(minExpire).Ticks,
+                    Item = func()
                 };
-                cache.Set(key, obj, new DateTimeOffset(now.AddMinutes(minExpire * 2)));
+                var now = DateTime.UtcNow;
+                obj.ExpiredTicks = now.AddMinutes(maxExpire >> 1).Ticks;
+                cache.Set(key, obj, new DateTimeOffset(now.AddMinutes(maxExpire)));
             }
-            else if (obj.ExpiredTicks < now.Ticks)
+            else
             {
-                obj.ExpiredTicks = now.AddMinutes(minExpire).Ticks;
-                Task.Run(() =>
+                var now = DateTime.UtcNow;
+                if (obj.ExpiredTicks < now.Ticks)
                 {
-                    obj.Item = func();
-                    cache.Set(key, obj, new DateTimeOffset(now.AddMinutes(minExpire * 2)));
-                });
+                    obj.ExpiredTicks = now.AddMinutes(maxExpire >> 1).Ticks;
+                    Task.Run(() =>
+                    {
+                        obj.Item = func();
+                        var now2 = DateTime.UtcNow;
+                        obj.ExpiredTicks = now2.AddMinutes(maxExpire >> 1).Ticks;
+                        cache.Set(key, obj, new DateTimeOffset(now2.AddMinutes(maxExpire)));
+                    });
+                }
             }
             return obj.Item;
         }
