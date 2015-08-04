@@ -20,31 +20,36 @@ namespace System.Runtime.Caching
     }
     public static class MemoryCacheExtensions
     {
-        public static T GetOrCreate<T>(this MemoryCache cache, string key, Func<T> func, int maxExpire = 16) where T : class
+        public static T GetOrCreate<T>(this MemoryCache cache, string key, Func<T> func, int refreshMinutes = 8, int expireMinutes = 16, bool noWait = false) where T : class
         {
             var obj = (CacheObject<T>) cache.Get(key);
-            if (obj == null)
+            if (obj == null && !noWait)
             {
                 obj = new CacheObject<T>
                 {
                     Item = func()
                 };
                 var now = DateTime.UtcNow;
-                obj.ExpiredTicks = now.AddMinutes(maxExpire >> 1).Ticks;
-                cache.Set(key, obj, new DateTimeOffset(now.AddMinutes(maxExpire)));
+                obj.ExpiredTicks = now.AddMinutes(refreshMinutes).Ticks;
+                cache.Set(key, obj, new DateTimeOffset(now.AddMinutes(expireMinutes)));
             }
             else
             {
                 var now = DateTime.UtcNow;
+                if (obj == null)
+                {
+                    obj = new CacheObject<T>();
+                    cache.Set(key, obj, new DateTimeOffset(now.AddMinutes(expireMinutes)));
+                }
                 if (obj.ExpiredTicks < now.Ticks)
                 {
-                    obj.ExpiredTicks = now.AddMinutes(maxExpire >> 1).Ticks;
+                    obj.ExpiredTicks = now.AddMinutes(refreshMinutes).Ticks;
                     Task.Run(() =>
                     {
                         obj.Item = func();
                         var now2 = DateTime.UtcNow;
-                        obj.ExpiredTicks = now2.AddMinutes(maxExpire >> 1).Ticks;
-                        cache.Set(key, obj, new DateTimeOffset(now2.AddMinutes(maxExpire)));
+                        obj.ExpiredTicks = now2.AddMinutes(refreshMinutes).Ticks;
+                        cache.Set(key, obj, new DateTimeOffset(now2.AddMinutes(expireMinutes)));
                     });
                 }
             }

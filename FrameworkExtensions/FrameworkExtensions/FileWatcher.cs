@@ -8,7 +8,7 @@ namespace FrameworkExtensions
 {
     public class FileWatcher : IDisposable
     {
-        public string Path { get; private set; }
+        public string Path { get; }
 
         private readonly ILog _logger;
         readonly FileSystemWatcher _watcher = new FileSystemWatcher();
@@ -91,8 +91,7 @@ namespace FrameworkExtensions
             {
                 var old = _store[e.Name] as IDisposable;
                 _store[e.Name] = value;
-                if (old != null)
-                    old.Dispose();
+                old?.Dispose();
             }
             bool b;
             _bag.TryRemove(e.Name, out b);
@@ -142,8 +141,7 @@ namespace FrameworkExtensions
             foreach (var kvp in _store)
             {
                 var d = kvp.Value as IDisposable;
-                if (d != null)
-                    d.Dispose();
+                d?.Dispose();
             }
         }
     }
