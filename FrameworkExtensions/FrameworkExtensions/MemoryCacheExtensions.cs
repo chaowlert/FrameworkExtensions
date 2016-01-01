@@ -20,7 +20,7 @@ namespace System.Runtime.Caching
     }
     public static class MemoryCacheExtensions
     {
-        public static T GetOrCreate<T>(this MemoryCache cache, string key, Func<T> func, int refreshMinutes = 8, int expireMinutes = 16, bool noWait = false) where T : class
+        public static T GetOrCreate<T>(this MemoryCache cache, string key, Func<T> func, int refreshMinutes = 1, int expireMinutes = 2, bool noWait = false) where T : class
         {
             var obj = (CacheObject<T>) cache.Get(key);
             if (obj == null && !noWait)
