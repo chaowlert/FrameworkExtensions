@@ -30,4 +30,15 @@ public static class StringExtensions
     {
         return Regex.Replace(text, @"\W+", "");
     }
+
+    public static string Coalesce(this string value, string fallback)
+    {
+        return string.IsNullOrEmpty(value) ? fallback : value;
+    }
+
+    public static bool IsEmailAddress(this string value)
+    {
+        return Regex.IsMatch(value, @"^([0-9a-zA-Z]([-\.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$");
+    }
+
 }
