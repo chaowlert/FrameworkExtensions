@@ -4,14 +4,12 @@
     {
         public static U GetValueOrDefault<T, U>(this IDictionary<T, U> dict, T key)
         {
-            U value;
-            return dict.TryGetValue(key, out value) ? value : default(U);
+            return dict.TryGetValue(key, out U value) ? value : default(U);
         }
 
         public static U GetValueOrDefault<T, U>(this IDictionary<T, U> dict, T key, U @default)
         {
-            U value;
-            return dict.TryGetValue(key, out value) ? value : @default;
+            return dict.TryGetValue(key, out U value) ? value : @default;
         }
     }
 }

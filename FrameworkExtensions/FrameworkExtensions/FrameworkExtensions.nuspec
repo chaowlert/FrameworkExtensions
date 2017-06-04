@@ -1,14 +1,12 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>$id$</id>
-    <version>$version$</version>
-    <title>$title$</title>
-    <authors>$author$</authors>
-    <owners>$author$</owners>
-    <licenseUrl></licenseUrl>
+    <id>FrameworkExtensions</id>
+    <version>1.0.0</version>
+    <title>FrameworkExtensions</title>
+    <authors>chaowlert</authors>
+    <owners>chaowlert</owners>
     <projectUrl>https://github.com/chaowlert/FrameworkExtensions</projectUrl>
-    <iconUrl></iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Some more extensions for .NET framework</description>
     <releaseNotes></releaseNotes>
